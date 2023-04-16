@@ -32,7 +32,9 @@ class AmeliaGPT(QtWidgets.QWidget):
         self.user_input.setFont(QtGui.QFont("Arial", 12))
         self.chat_output = QtWidgets.QTextEdit()
         self.chat_output.setReadOnly(True)
-        self.chat_output.setFont(QtGui.QFont("Arial", 12))
+        self.chat_output.setFont(QtGui.QFont("Courier New", 10))
+        self.chat_output.setStyleSheet("QTextEdit {background-color: black; color: white;}")
+        self.chat_output.textCursor().insertHtml("<font color='red'>AmeliaGPT:</font> Type your message and press 'Send'.")
 
         # Create button for generating response
         self.send_button = QtWidgets.QPushButton("Send")
@@ -56,30 +58,42 @@ class AmeliaGPT(QtWidgets.QWidget):
         self.setGeometry(300, 300, 600, 500)
         self.setWindowTitle("AmeliaGPT")
         self.setWindowIcon(QtGui.QIcon("icon.png"))
+        self.setStyleSheet("background-color: #252526; color: white;")
+
+        # Set focus on user input box
+        self.user_input.setFocus()
 
     def generate_response(self):
         # Get user input and generate response
         prompt = self.user_input.toPlainText()
-        response = self.chat_output.toPlainText()
-        if response:
-            response += "\n\n"
-        response += "You: " + prompt + "\n\n"
-        response += "AmeliaGPT: " + self._generate_response(prompt) + "\n\n"
-        self.chat_output.setText(response)
-        self.user_input.clear()
-    
+        if prompt:
+            response = self.chat_output.toPlainText()
+            if response:
+                response += "\n\n"
+            response += f"<font color='green'>You: {prompt}</font>\n\n"
+            response += f"<font color='red'>AmeliaGPT: {self._generate_response(prompt)}</font>\n\n"
+            self.chat_output.setText(response)
+            self.user_input.clear()
+
     def _generate_response(self, prompt):
         input_ids = self.tokenizer.encode(prompt, return_tensors="pt")
         output = self.model.generate(input_ids=input_ids, max_length=1000, do_sample=True, top_p=0.92, top_k=50)
         response = self.tokenizer.decode(output[0], skip_special_tokens=True)
-        return response
+        return response.replace('\n', '<br>')
 
     def copy_text(self):
         clipboard = QtWidgets.QApplication.clipboard()
         clipboard.setText(self.chat_output.toPlainText())
 
+    def keyPressEvent(self, event):
+        if event.key() == QtCore.Qt.Key_Return and not event.modifiers():
+            self.send_button.click()
+        else:
+            super().keyPressEvent(event)
+
+
 if __name__ == "__main__":
     app = QtWidgets.QApplication([])
+    app.setStyle("Fusion")
     ameliagpt = AmeliaGPT()
     ameliagpt.show()
-    app.exec_()

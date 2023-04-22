@@ -168,23 +168,21 @@ class BebrikGPT(QMainWindow):
         if "\n" in self.input_edit.toPlainText():
             self.send_input()
 
+
     def copy_output(self):
         output_text = self.text_edit.toPlainText()
         if output_text:
             pyperclip.copy(output_text)
+
 
     def keyPressEvent(self, event):
         if event.key() == Qt.Key_Return or event.key() == Qt.Key_Enter:
             self.send_input()
 
-    def copy_output(self):
-        output_text = self.text_edit.toPlainText()
-        if output_text:
-            pyperclip.copy(output_text)
-
     def clear_input(self):
         self.text_edit.clear()
         self.input_edit.clear()
+
 
 # Initalizing
 if __name__ == '__main__':

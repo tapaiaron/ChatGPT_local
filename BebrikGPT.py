@@ -1,15 +1,9 @@
 import subprocess
-
 import sys
 import os
-from PyQt5 import QtWidgets, QtGui, QtCore
-from PyQt5.QtCore import Qt
-from PyQt5.QtGui import QColor
-from PyQt5.QtWidgets import QApplication, QMainWindow, QPlainTextEdit, QPushButton, QStyleFactory
 import threading
 import time
-import pyperclip
-import transformers
+
 
 def install(package):
     try:
@@ -23,6 +17,14 @@ install("transformers")
 install("torch")
 install("PyQt5")
 install("pyperclip")
+
+from PyQt5 import QtWidgets, QtGui, QtCore
+from PyQt5.QtCore import Qt
+from PyQt5.QtGui import QColor
+from PyQt5.QtWidgets import QApplication, QMainWindow, QPlainTextEdit, QPushButton, QStyleFactory
+import pyperclip
+import transformers
+
 
 class BebrikGPT(QMainWindow):
     def __init__(self):
@@ -130,6 +132,6 @@ class BebrikGPT(QMainWindow):
 
 if __name__ == '__main__':
     app = QApplication(sys.argv)
-    chatbot = BebrikGPT()
-    chatbot.show()
+    bebrikGPT = BebrikGPT()
+    bebrikGPT.show()
     sys.exit(app.exec_())

@@ -1,31 +1,55 @@
+# Importing system modules
 import subprocess
 import sys
 import os
 import threading
 import time
 
-
+# Creating a function to install packages that are not system-essential
 def install(package):
     try:
         __import__(package)
     except ImportError:
         subprocess.check_call(["pip", "install", package])
 
-# Installing language model.
+# Installing modules for the NPL model
 install("tensorflow")
 install("transformers")
 install("torch")
 install("PyQt5")
 install("pyperclip")
 
+# Importing the modules needed
 from PyQt5 import QtWidgets, QtGui, QtCore
-from PyQt5.QtCore import Qt
+from PyQt5.QtCore import Qt, QRunnable, QThreadPool
 from PyQt5.QtGui import QColor
 from PyQt5.QtWidgets import QApplication, QMainWindow, QPlainTextEdit, QPushButton, QStyleFactory
 import pyperclip
-import transformers
+from transformers import GPT2Tokenizer, GPTNeoForCausalLM
 
 
+# Class for multi-threading
+class GetResponse(QRunnable):
+    def __init__(self, input_text, tokenizer, model, text_edit):
+        super().__init__()
+        self.input_text = input_text
+        self.tokenizer = tokenizer
+        self.model = model
+        self.text_edit = text_edit
+
+    def run(self):
+        # Generating a response using the GPT-3 model. max_length variable is set for the model response.
+        # The longer it is the more time it may take for the model to generate a response.
+        input_ids = self.tokenizer.encode(self.input_text, return_tensors='pt')
+        bot_output = self.model.generate(input_ids, max_length=1000, pad_token_id=self.tokenizer.eos_token_id)
+        bot_response = self.tokenizer.decode(bot_output[0], skip_special_tokens=True)
+
+        # Display the response in the chat window
+        self.text_edit.insertPlainText('You: ' + self.input_text + '\n')
+        self.text_edit.insertPlainText('BebrikGPT: ' + bot_response.replace(self.input_text, "") + '\n')
+
+
+# Class for the GUI
 class BebrikGPT(QMainWindow):
     def __init__(self):
         super(BebrikGPT, self).__init__()
@@ -34,11 +58,15 @@ class BebrikGPT(QMainWindow):
         icon_path = os.path.join(os.path.dirname(os.path.abspath(__file__)), "icon.png")
         self.setWindowIcon(QtGui.QIcon(os.path.abspath(icon_path)))
         self.initUI()
-        self.threadpool = []
 
-        # Load the GPT-3 model and tokenizer
-        self.tokenizer = transformers.GPT2Tokenizer.from_pretrained("EleutherAI/gpt-neo-1.3B")
-        self.model = transformers.GPTNeoForCausalLM.from_pretrained("EleutherAI/gpt-neo-1.3B")
+        # Create a thread pool
+        self.threadpool = QThreadPool()
+        self.threadpool.setMaxThreadCount(1)
+
+        # Load the GPT-Neo 125M model and tokenizer
+        self.tokenizer = GPT2Tokenizer.from_pretrained("EleutherAI/gpt-neo-125M")
+        self.model = GPTNeoForCausalLM.from_pretrained("EleutherAI/gpt-neo-125M")
+
 
     def initUI(self):
         self.text_edit = QPlainTextEdit(self)
@@ -96,21 +124,17 @@ class BebrikGPT(QMainWindow):
         """)
         self.copy_button.clicked.connect(self.copy_output)
 
+        self.setStyleSheet("background-color: #1E1E1E;")  # Set the GUI background color
+
+        self.show()
+
     def send_input(self):
         input_text = self.input_edit.toPlainText()
         if input_text:
             self.input_edit.clear()
-            self.get_response(input_text)
+            runnable = GetResponse(input_text, self.tokenizer, self.model, self.text_edit)
+            self.threadpool.start(runnable)
 
-    def get_response(self, input_text):
-        # Generate a response using the GPT-3 model
-        input_ids = self.tokenizer.encode(input_text, return_tensors='pt')
-        bot_output = self.model.generate(input_ids, max_length=1000, pad_token_id=self.tokenizer.eos_token_id)
-        bot_response = self.tokenizer.decode(bot_output[0], skip_special_tokens=True)
-
-        # Display the response in the chat window
-        self.text_edit.insertPlainText('You: ' + input_text + '\n')
-        self.text_edit.insertPlainText('BebrikGPT: ' + bot_response.replace(input_text, "") + '\n')
 
     def check_enter_pressed(self):
         if "\n" in self.input_edit.toPlainText():
@@ -130,6 +154,8 @@ class BebrikGPT(QMainWindow):
         if output_text:
             pyperclip.copy(output_text)
 
+
+# Initalizing
 if __name__ == '__main__':
     app = QApplication(sys.argv)
     bebrikGPT = BebrikGPT()

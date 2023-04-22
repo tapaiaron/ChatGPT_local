@@ -41,7 +41,7 @@ class GetResponse(QRunnable):
         # Generating a response using the GPT-3 model. max_length variable is set for the model response.
         # The longer it is the more time it may take for the model to generate a response.
         input_ids = self.tokenizer.encode(self.input_text, return_tensors='pt')
-        bot_output = self.model.generate(input_ids, max_length=1000, pad_token_id=self.tokenizer.eos_token_id)
+        bot_output = self.model.generate(input_ids, max_length=50, pad_token_id=self.tokenizer.eos_token_id)
         bot_response = self.tokenizer.decode(bot_output[0], skip_special_tokens=True)
 
         # Display the response in the chat window
@@ -54,7 +54,7 @@ class BebrikGPT(QMainWindow):
     def __init__(self):
         super(BebrikGPT, self).__init__()
         self.setWindowTitle("BebrikGPT")
-        self.setGeometry(200, 200, 800, 500)
+        self.setFixedSize(900, 450)  # Set fixed window size
         icon_path = os.path.join(os.path.dirname(os.path.abspath(__file__)), "icon.png")
         self.setWindowIcon(QtGui.QIcon(os.path.abspath(icon_path)))
         self.initUI()
@@ -69,19 +69,22 @@ class BebrikGPT(QMainWindow):
 
 
     def initUI(self):
+        self.setStyleSheet("background-color: #1E1E1E;")  # Set the GUI background
+
         self.text_edit = QPlainTextEdit(self)
         self.text_edit.setReadOnly(True)
-        self.text_edit.setGeometry(50, 50, 700, 300)
+        self.text_edit.setGeometry(50, 50, 800, 250)
         self.text_edit.setStyleSheet("background-color: #1E1E1E; color: white;")
 
         self.input_edit = QPlainTextEdit(self)
-        self.input_edit.setGeometry(50, 370, 500, 50)
+        self.input_edit.setGeometry(50, 320, 550, 50)
         self.input_edit.setFocusPolicy(Qt.StrongFocus)
         self.input_edit.setStyleSheet("background-color: #1E1E1E; color: white;")
         self.input_edit.textChanged.connect(self.check_enter_pressed)
 
+        # Create a Send button
         self.send_button = QPushButton('Send', self)
-        self.send_button.setGeometry(570, 370, 100, 50)
+        self.send_button.setGeometry(620, 320, 80, 50)
         self.send_button.setStyleSheet("""
             QPushButton {
                 background-color: #E74C3C;
@@ -102,8 +105,32 @@ class BebrikGPT(QMainWindow):
         """)
         self.send_button.clicked.connect(self.send_input)
 
+        # Create a Clear button
+        self.clear_button = QPushButton('Clear', self)
+        self.clear_button.setGeometry(710, 320, 80, 50)
+        self.clear_button.setStyleSheet("""
+            QPushButton {
+                background-color: #E74C3C;
+                color: white;
+                border: none;
+                font-weight: bold;
+                font-size: 14px;
+                border-radius: 5px;
+            }
+
+            QPushButton:hover {
+                background-color: #C0392B;
+            }
+
+            QPushButton:pressed {
+                background-color: #E74C3C;
+            }
+        """)
+        self.clear_button.clicked.connect(self.clear_input)
+
+        # Create a Copy button
         self.copy_button = QPushButton('Copy', self)
-        self.copy_button.setGeometry(690, 370, 100, 50)
+        self.copy_button.setGeometry(800, 320, 80, 50)
         self.copy_button.setStyleSheet("""
             QPushButton {
                 background-color: #E74C3C;
@@ -124,9 +151,10 @@ class BebrikGPT(QMainWindow):
         """)
         self.copy_button.clicked.connect(self.copy_output)
 
-        self.setStyleSheet("background-color: #1E1E1E;")  # Set the GUI background color
+        self.setStyleSheet("background-color: #1E1E1E;")  # Set the GUI background
 
         self.show()
+
 
     def send_input(self):
         input_text = self.input_edit.toPlainText()
@@ -154,6 +182,9 @@ class BebrikGPT(QMainWindow):
         if output_text:
             pyperclip.copy(output_text)
 
+    def clear_input(self):
+        self.text_edit.clear()
+        self.input_edit.clear()
 
 # Initalizing
 if __name__ == '__main__':

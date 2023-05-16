@@ -41,7 +41,7 @@ class GetResponse(QRunnable):
         # Generating a response using the GPT-3 model. max_length variable is set for the model response.
         # The longer it is the more time it may take for the model to generate a response.
         input_ids = self.tokenizer.encode(self.input_text, return_tensors='pt')
-        bot_output = self.model.generate(input_ids, max_length=50, pad_token_id=self.tokenizer.eos_token_id)
+        bot_output = self.model.generate(input_ids, max_length=50, pad_token_id=self.tokenizer.eos_token_id, num_return_sequences=1, top_p=0.9)
         bot_response = self.tokenizer.decode(bot_output[0], skip_special_tokens=True)
 
         # Display the response in the chat window
